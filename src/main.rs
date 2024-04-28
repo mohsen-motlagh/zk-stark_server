@@ -1,7 +1,8 @@
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 use zkp_stark::{*, primefield::*};
-use hex;
+use actix_web::get;
+use std::time::Instant;
 
 #[derive(Deserialize)]
 struct ProofSubmission {
@@ -12,6 +13,7 @@ struct ProofSubmission {
 struct VerificationResponse {
     success: bool,
     message: String,
+    
 }
 
 struct FibonacciClaim {
@@ -45,6 +47,7 @@ impl Verifiable for FibonacciClaim {
 }
 
 async fn verify_proof(submission: web::Json<ProofSubmission>) -> impl Responder {
+    let start_time = Instant::now();
     // Deserialize the hex-encoded proof
     let proof_bytes = match hex::decode(&submission.proof) {
         Ok(bytes) => bytes,
@@ -64,19 +67,28 @@ async fn verify_proof(submission: web::Json<ProofSubmission>) -> impl Responder 
             message: format!("Proof verification failed: {:?}", e),
         },
     };
-
+    let duration = start_time.elapsed();
+    println!("verification time: {:?}", duration);
     HttpResponse::Ok().json(verification_result)
 }
 
+#[get("/health")]
+async fn health() -> impl Responder {
+    HttpResponse::Ok().body("OK")
+}
+
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Server is running at http://127.0.0.1:8080/");
+    println!("Server is running at http://127.0.0.1:8000");
     HttpServer::new(|| {
+
         App::new().service(
             web::resource("/submit_proof").route(web::post().to(verify_proof)),
         )
+        .service(health) 
     })
-    .bind("127.0.0.1:8080")?
+    .bind("0.0.0.0:8000")?
     .run()
     .await
 }
@@ -90,7 +102,7 @@ fn verify_the_proof(proof_bytes: Vec<u8>) -> Result<(), &'static str> {
     };
     match claim.verify(&proof) {
         Ok(_) => Ok(()),
-        Err(_) => Err("Verification failed gggggg"),
+        Err(_) => Err("Verification failed"),
     }
 }
 
