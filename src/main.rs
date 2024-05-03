@@ -77,6 +77,10 @@ async fn health() -> impl Responder {
     HttpResponse::Ok().body("OK")
 }
 
+#[get("/")]
+async fn printing() -> impl Responder {
+    HttpResponse::Ok().body("Server is running")
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -86,6 +90,7 @@ async fn main() -> std::io::Result<()> {
         App::new().service(
             web::resource("/submit_proof").route(web::post().to(verify_proof)),
         )
+        .service(printing)
         .service(health) 
     })
     .bind("0.0.0.0:8000")?

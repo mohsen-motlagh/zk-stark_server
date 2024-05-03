@@ -41,5 +41,6 @@ COPY --from=builder /app/target/release/stark-server /app/stark-server
 # Set the working directory to /app
 WORKDIR /app
 
+EXPOSE 8000
 # Set the startup command to run your binary
 CMD ["./stark-server"]
